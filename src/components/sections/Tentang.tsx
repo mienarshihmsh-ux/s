@@ -9,7 +9,7 @@ interface TentangProps {
 
 export function Tentang({ data }: TentangProps) {
   return (
-    <section id="tentang" class="section section-light py-20 px-[5%] bg-white">
+    <section id="tentang" className="section section-light py-20 px-[5%] bg-white">
       <div className="max-w-6xl mx-auto">
         <h2 className="section-title">
           <i className="fas fa-info-circle mr-3"></i> Tentang Kami
