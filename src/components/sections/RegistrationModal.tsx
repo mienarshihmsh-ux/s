@@ -1,6 +1,7 @@
+
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -101,34 +102,42 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     setLoading(true);
 
     try {
-      // 1. Simpan Data ke Apps Script
+      // 1. Konversi file ke Base64
       const fotoBase64 = await fileToBase64(files.foto);
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
 
-      const body = new FormData();
-      body.append('nama', formData.nama);
-      body.append('nisn', formData.nisn);
-      body.append('nik', formData.nik);
-      body.append('foto', fotoBase64);
-      body.append('fotoExt', files.foto.name.split('.').pop() || 'jpg');
-      body.append('ijazah', ijazahBase64);
-      body.append('kk', kkBase64);
+      // 2. Kirim Data ke Apps Script sebagai JSON (Lebih stabil untuk Apps Script)
+      const payload = {
+        nama: formData.nama,
+        nisn: formData.nisn,
+        nik: formData.nik,
+        foto: fotoBase64,
+        fotoExt: files.foto.name.split('.').pop() || 'jpg',
+        ijazah: ijazahBase64,
+        kk: kkBase64
+      };
 
+      // Gunakan mode 'no-cors' jika terjadi error CORS, tapi Apps Script biasanya butuh response
+      // Menggunakan 'text/plain' adalah trik agar tidak memicu CORS preflight OPTIONS request
       const response = await fetch(appsScriptUrl, {
         method: 'POST',
-        body: body,
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
       if (result.result !== 'success') {
-        throw new Error(result.message || 'Gagal mengirim pendaftaran');
+        throw new Error(result.message || 'Gagal menyimpan data ke server');
       }
 
-      // 2. Proses Pembayaran Midtrans
-      const orderId = `INV-${Date.now()}-${formData.nisn}`;
-      const amount = 50000; // Biaya pendaftaran
+      // 3. Proses Pembayaran Midtrans (Hanya jika simpan data berhasil)
+      const orderId = `REG-${Date.now()}-${formData.nisn}`;
+      const amount = 50000; 
 
       const paymentResult = await createPaymentToken({
         amount,
@@ -137,16 +146,16 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       });
 
       if (!paymentResult || !paymentResult.token) {
-        throw new Error("Gagal mendapatkan token pembayaran dari Midtrans.");
+        throw new Error("Gagal mendapatkan token pembayaran. Hubungi admin.");
       }
 
-      // 3. Buka Midtrans Snap UI
+      // 4. Buka Midtrans Snap UI
       if (window.snap) {
         window.snap.pay(paymentResult.token, {
           onSuccess: (result: any) => {
             toast({
-              title: "Pembayaran Berhasil!",
-              description: `Terima kasih ${formData.nama}, pendaftaran Anda telah lengkap.`,
+              title: "Pendaftaran Berhasil!",
+              description: `Terima kasih ${formData.nama}, pendaftaran dan pembayaran telah selesai.`,
             });
             onClose();
             setFormData({ nama: '', nisn: '', nik: '' });
@@ -155,35 +164,33 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
           onPending: (result: any) => {
             toast({
               title: "Menunggu Pembayaran",
-              description: "Silakan selesaikan pembayaran Anda sesuai instruksi di jendela Midtrans.",
+              description: "Silakan selesaikan pembayaran Anda sebelum menutup halaman ini.",
             });
             onClose();
           },
           onError: (result: any) => {
             toast({
               title: "Pembayaran Gagal",
-              description: "Terjadi kesalahan saat memproses pembayaran.",
+              description: "Terjadi kesalahan pada sistem pembayaran.",
               variant: "destructive"
             });
           },
           onClose: () => {
             toast({
-              description: "Anda menutup jendela pembayaran sebelum selesai.",
+              description: "Pendaftaran tersimpan, namun pembayaran belum diselesaikan.",
             });
+            onClose();
           }
         });
       } else {
-        toast({
-          title: "Sistem Pembayaran Belum Siap",
-          description: "Mohon tunggu sebentar atau muat ulang halaman jika masalah berlanjut.",
-          variant: "destructive"
-        });
+        throw new Error("Sistem pembayaran (Snap JS) gagal dimuat. Muat ulang halaman.");
       }
 
     } catch (error: any) {
+      console.error("Submission Error:", error);
       toast({
-        title: "Pendaftaran Gagal",
-        description: error.message || "Terjadi kesalahan saat mengirim data.",
+        title: "Terjadi Kesalahan",
+        description: error.message || "Gagal memproses pendaftaran.",
         variant: "destructive"
       });
     } finally {
@@ -199,7 +206,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
             <i className="fas fa-paper-plane"></i> Form Pendaftaran Santri Baru
           </DialogTitle>
           <DialogDescription className="text-base">
-            Silakan isi formulir di bawah ini. Setelah kirim, Anda akan diarahkan ke pembayaran biaya pendaftaran (Rp 50.000).
+            Isi formulir dengan benar. Setelah terkirim, Anda akan diarahkan ke pembayaran administrasi (Rp 50.000).
           </DialogDescription>
         </DialogHeader>
 
@@ -281,11 +288,11 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <i className="fas fa-spinner animate-spin"></i> Memproses...
+                  <i className="fas fa-spinner animate-spin"></i> Sedang Memproses...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <i className="fas fa-paper-plane"></i> Kirim & Bayar
+                  <i className="fas fa-paper-plane"></i> Kirim & Bayar Sekarang
                 </span>
               )}
             </Button>
