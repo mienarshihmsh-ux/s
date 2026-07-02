@@ -1,4 +1,3 @@
-
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
@@ -31,10 +30,10 @@ export default function RootLayout({
       <body className="font-body antialiased">
         {children}
         <Toaster />
-        {/* Midtrans Snap JS - Sandbox Mode */}
+        {/* Midtrans Snap JS - Sandbox Mode dengan Client Key yang diberikan */}
         <Script 
           src="https://app.sandbox.midtrans.com/snap/snap.js" 
-          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+          data-client-key="SB-Mid-client-FBGELqULvvZ8eF0E"
           strategy="lazyOnload"
         />
       </body>
