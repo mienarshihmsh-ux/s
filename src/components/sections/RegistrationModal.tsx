@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -14,6 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import { createPaymentToken } from '@/app/actions/payment';
+
+// Deklarasi window.snap untuk typescript
+declare global {
+  interface Window {
+    snap: any;
+  }
+}
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -70,7 +79,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validations
+    // Validasi dasar
     if (!formData.nama || !formData.nisn || !formData.nik || !files.foto || !files.ijazah || !files.kk) {
       toast({
         title: "Form Tidak Lengkap",
@@ -93,6 +102,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     setLoading(true);
 
     try {
+      // 1. Simpan Data ke Apps Script
       const fotoBase64 = await fileToBase64(files.foto);
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
@@ -113,18 +123,55 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
       const result = await response.json();
 
-      if (result.result === 'success') {
-        toast({
-          title: "Pendaftaran Berhasil!",
-          description: `Data ${formData.nama} berhasil disimpan. Terima kasih telah mendaftar di TPA AL IMAN.`,
-        });
-        onClose();
-        // Reset form
-        setFormData({ nama: '', nisn: '', nik: '' });
-        setFiles({ foto: null, ijazah: null, kk: null });
-      } else {
+      if (result.result !== 'success') {
         throw new Error(result.message || 'Gagal mengirim pendaftaran');
       }
+
+      // 2. Proses Pembayaran Midtrans
+      const orderId = `INV-${Date.now()}-${formData.nisn}`;
+      const amount = 50000; // Contoh biaya pendaftaran: Rp 50.000
+
+      const { token } = await createPaymentToken({
+        amount,
+        orderId,
+        customerName: formData.nama
+      });
+
+      // 3. Buka Midtrans Snap UI
+      if (window.snap) {
+        window.snap.pay(token, {
+          onSuccess: (result: any) => {
+            toast({
+              title: "Pembayaran Berhasil!",
+              description: `Terima kasih ${formData.nama}, pendaftaran Anda telah lengkap.`,
+            });
+            onClose();
+            // Reset form
+            setFormData({ nama: '', nisn: '', nik: '' });
+            setFiles({ foto: null, ijazah: null, kk: null });
+          },
+          onPending: (result: any) => {
+            toast({
+              title: "Menunggu Pembayaran",
+              description: "Silakan selesaikan pembayaran Anda di gerai atau bank terdekat.",
+            });
+            onClose();
+          },
+          onError: (result: any) => {
+            toast({
+              title: "Pembayaran Gagal",
+              description: "Terjadi kesalahan saat memproses pembayaran.",
+              variant: "destructive"
+            });
+          },
+          onClose: () => {
+            toast({
+              description: "Anda belum menyelesaikan pembayaran.",
+            });
+          }
+        });
+      }
+
     } catch (error: any) {
       toast({
         title: "Pendaftaran Gagal",
@@ -138,13 +185,13 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl">
+      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl z-[1200]">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-2xl font-headline font-bold text-primary flex items-center gap-3">
             <i className="fas fa-paper-plane"></i> Form Pendaftaran Santri Baru
           </DialogTitle>
           <DialogDescription className="text-base">
-            Silakan isi formulir di bawah ini dengan lengkap dan benar.
+            Silakan isi formulir di bawah ini. Setelah kirim, Anda akan diarahkan ke pembayaran biaya pendaftaran (Rp 50.000).
           </DialogDescription>
         </DialogHeader>
 
@@ -176,9 +223,6 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
                 onChange={handleInputChange}
                 required 
               />
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                <i className="fas fa-info-circle"></i> Nomor Induk Siswa Nasional (10 digit angka)
-              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="nik" className="flex items-center gap-2 text-foreground font-semibold">
@@ -192,9 +236,6 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
                 onChange={handleInputChange}
                 required 
               />
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-1">
-                <i className="fas fa-info-circle"></i> Nomor Induk Kependudukan (16 digit angka)
-              </p>
             </div>
           </div>
 
@@ -204,32 +245,20 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
                 <i className="fas fa-camera text-primary"></i> Foto Santri <span className="text-red-500">*</span>
               </Label>
               <Input id="foto" type="file" accept=".jpg,.jpeg,.png" onChange={handleFileChange} className="bg-white border-2 rounded-xl cursor-pointer" required />
-              <div className="flex justify-between items-center text-[10px] text-muted-foreground">
-                <span>Format: JPG, PNG</span>
-                <span>Maks 2MB</span>
-              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="ijazah" className="flex items-center gap-2 text-foreground font-semibold">
-                <i className="fas fa-graduation-cap text-primary"></i> Ijazah / Surat Keterangan <span className="text-red-500">*</span>
+                <i className="fas fa-graduation-cap text-primary"></i> Ijazah (PDF) <span className="text-red-500">*</span>
               </Label>
               <Input id="ijazah" type="file" accept=".pdf" onChange={handleFileChange} className="bg-white border-2 rounded-xl cursor-pointer" required />
-              <div className="flex justify-between items-center text-[10px] text-muted-foreground">
-                <span>Format: PDF</span>
-                <span>Maks 2MB</span>
-              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="kk" className="flex items-center gap-2 text-foreground font-semibold">
-                <i className="fas fa-users text-primary"></i> Kartu Keluarga <span className="text-red-500">*</span>
+                <i className="fas fa-users text-primary"></i> Kartu Keluarga (PDF) <span className="text-red-500">*</span>
               </Label>
               <Input id="kk" type="file" accept=".pdf" onChange={handleFileChange} className="bg-white border-2 rounded-xl cursor-pointer" required />
-              <div className="flex justify-between items-center text-[10px] text-muted-foreground">
-                <span>Format: PDF</span>
-                <span>Maks 2MB</span>
-              </div>
             </div>
           </div>
 
@@ -244,11 +273,11 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <i className="fas fa-spinner animate-spin"></i> Mengirim...
+                  <i className="fas fa-spinner animate-spin"></i> Memproses...
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <i className="fas fa-paper-plane"></i> Kirim Pendaftaran
+                  <i className="fas fa-paper-plane"></i> Kirim & Bayar
                 </span>
               )}
             </Button>

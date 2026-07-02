@@ -1,6 +1,8 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'TPA AL IMAN - Tempat Pendidikan Al-Qur\'an',
@@ -29,6 +31,12 @@ export default function RootLayout({
       <body className="font-body antialiased">
         {children}
         <Toaster />
+        {/* Midtrans Snap JS - Sandbox Mode */}
+        <Script 
+          src="https://app.sandbox.midtrans.com/snap/snap.js" 
+          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
