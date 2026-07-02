@@ -70,7 +70,11 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Ambil hanya bagian base64-nya saja
+        resolve(result.split(',')[1]);
+      };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
@@ -79,7 +83,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasi dasar
+    // Validasi dasar frontend
     if (!formData.nama || !formData.nisn || !formData.nik || !files.foto || !files.ijazah || !files.kk) {
       toast({
         title: "Form Tidak Lengkap",
@@ -107,26 +111,23 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
 
-      // 2. Kirim Data ke Apps Script sebagai JSON (Lebih stabil untuk Apps Script)
-      const payload = {
-        nama: formData.nama,
-        nisn: formData.nisn,
-        nik: formData.nik,
-        foto: fotoBase64,
-        fotoExt: files.foto.name.split('.').pop() || 'jpg',
-        ijazah: ijazahBase64,
-        kk: kkBase64
-      };
+      // 2. Kirim Data ke Apps Script menggunakan URLSearchParams
+      // Ini akan mengisi e.parameter di Google Apps Script, yang merupakan cara paling stabil
+      const bodyParams = new URLSearchParams();
+      bodyParams.append('nama', formData.nama);
+      bodyParams.append('nisn', formData.nisn);
+      bodyParams.append('nik', formData.nik);
+      bodyParams.append('foto', fotoBase64);
+      bodyParams.append('fotoExt', files.foto.name.split('.').pop() || 'jpg');
+      bodyParams.append('ijazah', ijazahBase64);
+      bodyParams.append('kk', kkBase64);
 
-      // Gunakan mode 'no-cors' jika terjadi error CORS, tapi Apps Script biasanya butuh response
-      // Menggunakan 'text/plain' adalah trik agar tidak memicu CORS preflight OPTIONS request
       const response = await fetch(appsScriptUrl, {
         method: 'POST',
-        mode: 'cors',
         headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(payload),
+        body: bodyParams.toString(),
       });
 
       const result = await response.json();
@@ -177,20 +178,20 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
           },
           onClose: () => {
             toast({
-              description: "Pendaftaran tersimpan, namun pembayaran belum diselesaikan.",
+              description: "Data tersimpan, silakan selesaikan pembayaran nanti jika diperlukan.",
             });
             onClose();
           }
         });
       } else {
-        throw new Error("Sistem pembayaran (Snap JS) gagal dimuat. Muat ulang halaman.");
+        throw new Error("Sistem pembayaran gagal dimuat. Silakan muat ulang halaman.");
       }
 
     } catch (error: any) {
       console.error("Submission Error:", error);
       toast({
-        title: "Terjadi Kesalahan",
-        description: error.message || "Gagal memproses pendaftaran.",
+        title: "Pendaftaran Gagal",
+        description: error.message || "Terjadi kesalahan saat memproses data.",
         variant: "destructive"
       });
     } finally {
