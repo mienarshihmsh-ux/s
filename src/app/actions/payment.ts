@@ -1,10 +1,11 @@
+
 'use server';
 
 import Midtrans from 'midtrans-client';
 
 /**
  * Server action untuk membuat transaksi Midtrans.
- * Menggunakan Server Key yang diberikan oleh user.
+ * Menggunakan Server Key yang diambil dari environment variables demi keamanan.
  */
 export async function createPaymentToken(orderData: {
   amount: number;
@@ -13,11 +14,13 @@ export async function createPaymentToken(orderData: {
   email: string;
 }) {
   try {
-    // Inisialisasi Snap client dengan Server Key Sandbox
+    // Inisialisasi Snap client
+    // Sangat disarankan untuk mengatur nilai ini di environment variables (misal: .env.local)
+    // Server Key bersifat rahasia dan tidak boleh terekspos ke sisi klien.
     const snap = new Midtrans.Snap({
       isProduction: false,
-      serverKey: 'SB-Mid-server-yllL5VMGkjeO9dIEHKFY9wdA',
-      clientKey: 'SB-Mid-client-FBGELqULvvZ8eF0E'
+      serverKey: process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-yllL5VMGkjeO9dIEHKFY9wdA',
+      clientKey: process.env.MIDTRANS_CLIENT_KEY || 'SB-Mid-client-FBGELqULvvZ8eF0E'
     });
 
     const parameter = {
