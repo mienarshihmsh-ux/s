@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -119,7 +120,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
 
-      // 2. Kirim Data ke Apps Script menggunakan URLSearchParams
+      // 2. Kirim Data ke Apps Script menggunakan URLSearchParams agar sesuai dengan e.parameter
       const bodyParams = new URLSearchParams();
       bodyParams.append('nama', formData.nama);
       bodyParams.append('email', formData.email);
@@ -159,7 +160,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
         throw new Error("Gagal mendapatkan token pembayaran. Hubungi admin.");
       }
 
-      // 4. Buka Midtrans Snap UI
+      // 4. Buka Midtrans Snap UI - Tutup modal pendaftaran agar overlay tidak menghalangi klik
       if (window.snap) {
         onClose();
 
@@ -177,7 +178,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
           onPending: (result: any) => {
             Swal.fire({
               title: 'Menunggu Pembayaran',
-              text: 'Silakan selesaikan pembayaran Anda sesuai instruksi.',
+              text: 'Silakan selesaikan pembayaran Anda sesuai instruksi di jendela Midtrans.',
               icon: 'info',
               confirmButtonColor: '#1e8449',
             });
@@ -185,7 +186,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
           onError: (result: any) => {
             Swal.fire({
               title: 'Pembayaran Gagal',
-              text: 'Terjadi kesalahan pada sistem pembayaran.',
+              text: 'Terjadi kesalahan pada sistem pembayaran Midtrans.',
               icon: 'error',
               confirmButtonColor: '#1e8449',
             });
@@ -193,21 +194,21 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
           onClose: () => {
             Swal.fire({
               title: 'Informasi',
-              text: 'Proses pendaftaran dilanjutkan setelah pembayaran selesai.',
+              text: 'Proses pendaftaran Anda tersimpan, namun belum lunas. Silakan hubungi admin jika ingin melanjutkan pembayaran.',
               icon: 'warning',
               confirmButtonColor: '#1e8449',
             });
           }
         });
       } else {
-        throw new Error("Sistem pembayaran gagal dimuat. Silakan muat ulang halaman.");
+        throw new Error("Sistem pembayaran Midtrans gagal dimuat. Silakan muat ulang halaman.");
       }
 
     } catch (error: any) {
       console.error("Submission Error:", error);
       Swal.fire({
         title: 'Pendaftaran Gagal',
-        text: error.message || 'Terjadi kesalahan saat memproses data.',
+        text: error.message || 'Terjadi kesalahan saat memproses data pendaftaran.',
         icon: 'error',
         confirmButtonColor: '#1e8449',
       });
