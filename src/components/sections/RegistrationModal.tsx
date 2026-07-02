@@ -102,10 +102,12 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
 
+      // Gunakan URLSearchParams untuk kompatibilitas e.parameter di Apps Script
       const bodyParams = new URLSearchParams();
       bodyParams.append('nama', formData.nama);
       bodyParams.append('email', formData.email);
-      bodyParams.append('telepon', formData.telepon); // Perbaikan: Menambahkan field telepon
+      // PENTING: Menggunakan 'noTelp' agar sesuai dengan variabel di Google Apps Script
+      bodyParams.append('noTelp', formData.telepon); 
       bodyParams.append('nisn', formData.nisn);
       bodyParams.append('nik', formData.nik);
       bodyParams.append('foto', fotoBase64);
@@ -143,7 +145,9 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       }
 
       if (window.snap) {
+        // Tutup modal pendaftaran agar overlay tidak menghalangi popup Midtrans
         onClose();
+        
         window.snap.pay(paymentResult.token, {
           onSuccess: (result: any) => {
             Swal.fire({
