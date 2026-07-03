@@ -41,9 +41,13 @@
   }
 }
 
-/* Pastikan SweetAlert2 selalu berada di atas modal Dialog Radix/ShadCN */
+/* 
+ * Perbaikan Kritis: Memastikan SweetAlert2 selalu berada di lapisan teratas 
+ * dan dapat diklik meskipun modal Radix/ShadCN sedang terbuka.
+ */
 .swal2-container {
   z-index: 10000 !important;
+  pointer-events: auto !important;
 }
 
 .hero-gradient {
