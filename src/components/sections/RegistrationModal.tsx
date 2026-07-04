@@ -189,7 +189,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       }
 
       const orderId = `REG-${Date.now()}-${formData.nisn}`;
-      const amount = 50000;
+      const amount = 200000;
 
       const paymentResult = await createPaymentToken({
         amount,
@@ -260,7 +260,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
             <i className="fas fa-paper-plane"></i> Pendaftaran Santri Baru
           </DialogTitle>
           <DialogDescription className="text-base">
-            Isi formulir dengan data yang benar. Biaya pendaftaran Rp 50.000.
+            Isi formulir dengan data yang benar. Biaya pendaftaran Rp 200.000.
           </DialogDescription>
         </DialogHeader>
 
