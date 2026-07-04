@@ -42,10 +42,15 @@
 }
 
 /* 
- * Menghapus pointer-events: auto !important yang menyebabkan form tidak bisa diklik.
- * Sekarang hanya memastikan z-index tinggi agar tampil di depan saat aktif.
+ * Memastikan SweetAlert2 dan Midtrans Snap berada di depan modal Shadcn (Radix UI).
+ * Shadcn Dialog menggunakan z-index 50 (overlay) dan 50 (content).
+ * Kita beri nilai yang jauh lebih tinggi agar tidak terhalang.
  */
-.swal2-container, #snap-midtrans {
+.swal2-container {
+  z-index: 999999 !important;
+}
+
+#snap-midtrans {
   z-index: 999999 !important;
 }
 

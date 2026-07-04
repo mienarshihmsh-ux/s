@@ -52,6 +52,8 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
+    // Auto-complete off handled via prop on input. 
+    // Validation for numbers only for specific fields
     if (id === 'nisn') {
       setFormData(prev => ({ ...prev, nisn: value.replace(/\D/g, '').slice(0, 10) }));
     } else if (id === 'nik') {
@@ -70,7 +72,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       if (file.size > MAX_FILE_SIZE) {
         Swal.fire({
           title: 'Berkas Terlalu Besar',
-          text: `Ukuran maksimal ${file.name} adalah 1MB.`,
+          text: `Ukuran maksimal ${file.name} adalah 1MB agar proses kirim tetap cepat.`,
           icon: 'warning',
           confirmButtonColor: '#1e8449',
         });
@@ -96,6 +98,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
   const generatePDF = (data: typeof formData, orderId: string) => {
     const doc = new jsPDF();
     
+    // Header
     doc.setFontSize(22);
     doc.setTextColor(30, 132, 73);
     doc.text('TPA AL IMAN', 105, 20, { align: 'center' });
@@ -107,6 +110,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     doc.setLineWidth(0.5);
     doc.line(20, 35, 190, 35);
     
+    // Body
     doc.setFontSize(12);
     let y = 50;
     const lineHeight = 10;
@@ -128,12 +132,13 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     doc.text('Status Pembayaran:', 20, y); y += lineHeight;
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(30, 132, 73);
-    doc.text('LUNAS (Rp 50.000)', 30, y); y += lineHeight + 20;
+    doc.text('LUNAS (Biaya Registrasi Digital)', 30, y); y += lineHeight + 20;
     
+    // Footer PDF
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(10);
-    doc.text('Terima kasih telah melakukan pendaftaran digital di TPA AL IMAN.', 105, y, { align: 'center' }); y += 5;
-    doc.text('Silakan simpan bukti ini untuk keperluan administrasi selanjutnya.', 105, y, { align: 'center' });
+    doc.text('Terima kasih telah mendaftar di TPA AL IMAN.', 105, y, { align: 'center' }); y += 5;
+    doc.text('Silakan simpan bukti pendaftaran ini untuk administrasi.', 105, y, { align: 'center' });
     
     doc.save(`Bukti_Pendaftaran_${data.nama.replace(/\s+/g, '_')}.pdf`);
   };
@@ -143,8 +148,8 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     
     if (!formData.nama || !formData.email || !formData.telepon || !formData.nisn || !formData.nik || !files.foto || !files.ijazah || !files.kk) {
       Swal.fire({
-        title: 'Form Tidak Lengkap',
-        text: 'Semua kolom wajib diisi dan berkas wajib diunggah!',
+        title: 'Lengkapi Data',
+        text: 'Pastikan semua kolom diisi dan berkas diunggah.',
         icon: 'warning',
         confirmButtonColor: '#1e8449',
       });
@@ -154,6 +159,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     setLoading(true);
 
     try {
+      // 1. Konversi berkas ke Base64
       const fotoBase64 = await fileToBase64(files.foto);
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
@@ -169,6 +175,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       bodyParams.append('ijazah', ijazahBase64);
       bodyParams.append('kk', kkBase64);
 
+      // 2. Kirim ke Google Apps Script (Validasi Ganda dilayani di server)
       const response = await fetch(appsScriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -177,19 +184,21 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
       const result = await response.json();
 
+      // 3. Cek hasil dari Google Sheets
       if (result.result !== 'success') {
         setLoading(false);
         Swal.fire({
           title: 'Pendaftaran Gagal',
-          text: result.message || 'Terjadi kesalahan pada server.',
+          text: result.message || 'Data sudah ada atau terjadi kesalahan sistem.',
           icon: 'error',
           confirmButtonColor: '#1e8449',
         });
         return;
       }
 
+      // 4. Jika simpan data BERHASIL, lanjut buat token Midtrans
       const orderId = `REG-${Date.now()}-${formData.nisn}`;
-      const amount = 50000; 
+      const amount = 50000; // Contoh Biaya Pendaftaran Rp 50.000
 
       const paymentResult = await createPaymentToken({
         amount,
@@ -203,10 +212,11 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       if (window.snap && paymentResult?.token) {
         window.snap.pay(paymentResult.token, {
           onSuccess: () => {
-            const finalData = { ...formData };
+            // Backup data pendaftaran untuk PDF
+            const pdfData = { ...formData };
             Swal.fire({
-              title: 'Berhasil!',
-              text: 'Pendaftaran dan pembayaran telah selesai.',
+              title: 'Pembayaran Berhasil!',
+              text: 'Pendaftaran Anda telah kami terima.',
               icon: 'success',
               showCancelButton: true,
               confirmButtonColor: '#1e8449',
@@ -215,7 +225,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
               cancelButtonText: 'Tutup',
             }).then((result) => {
               if (result.isConfirmed) {
-                generatePDF(finalData, orderId);
+                generatePDF(pdfData, orderId);
               }
               onClose();
               setFormData({ nama: '', email: '', telepon: '', nisn: '', nik: '' });
@@ -224,15 +234,15 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
           onPending: () => {
             Swal.fire({
               title: 'Menunggu Pembayaran',
-              text: 'Silakan selesaikan pembayaran Anda.',
+              text: 'Silakan segera selesaikan pembayaran sesuai instruksi.',
               icon: 'info',
               confirmButtonColor: '#1e8449',
             });
           },
           onError: () => {
             Swal.fire({
-              title: 'Gagal',
-              text: 'Terjadi kesalahan pada pembayaran.',
+              title: 'Pembayaran Gagal',
+              text: 'Terjadi kesalahan saat memproses pembayaran Anda.',
               icon: 'error',
               confirmButtonColor: '#1e8449',
             });
@@ -244,8 +254,8 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       setLoading(false);
       console.error("Submission error:", error);
       Swal.fire({
-        title: 'Kesalahan Sistem',
-        text: 'Gagal menghubungi server pendaftaran. Silakan coba lagi nanti.',
+        title: 'Koneksi Terputus',
+        text: 'Gagal menghubungi server pendaftaran. Pastikan koneksi stabil.',
         icon: 'error',
         confirmButtonColor: '#1e8449',
       });
@@ -257,33 +267,33 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-2xl font-headline font-bold text-primary flex items-center gap-3">
-            <i className="fas fa-paper-plane"></i> Form Pendaftaran Santri Baru
+            <i className="fas fa-paper-plane"></i> Pendaftaran Santri Baru
           </DialogTitle>
           <DialogDescription className="text-base">
-            Lengkapi data santri. Biaya pendaftaran Rp 50.000.
+            Isi formulir dengan data yang benar. Biaya pendaftaran Rp 50.000.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="nama" className="flex items-center gap-2 font-semibold">
-              <i className="fas fa-user text-primary"></i> Nama Lengkap Santri
+              <i className="fas fa-user text-primary"></i> Nama Lengkap
             </Label>
-            <Input id="nama" placeholder="Nama Lengkap" className="h-12 border-2 rounded-xl" value={formData.nama} onChange={handleInputChange} autoComplete="off" required />
+            <Input id="nama" placeholder="Sesuai Akta Kelahiran" className="h-12 border-2 rounded-xl" value={formData.nama} onChange={handleInputChange} autoComplete="off" required />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2 font-semibold">
-                <i className="fas fa-envelope text-primary"></i> Email
+                <i className="fas fa-envelope text-primary"></i> Email Aktif
               </Label>
-              <Input id="email" type="email" placeholder="email@contoh.com" className="h-12 border-2 rounded-xl" value={formData.email} onChange={handleInputChange} autoComplete="off" required />
+              <Input id="email" type="email" placeholder="contoh@gmail.com" className="h-12 border-2 rounded-xl" value={formData.email} onChange={handleInputChange} autoComplete="off" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="telepon" className="flex items-center gap-2 font-semibold">
                 <i className="fas fa-phone text-primary"></i> No. WhatsApp
               </Label>
-              <Input id="telepon" placeholder="0812xxxxxxxx" className="h-12 border-2 rounded-xl" value={formData.telepon} onChange={handleInputChange} autoComplete="off" required />
+              <Input id="telepon" placeholder="08xxxxxxxxxx" className="h-12 border-2 rounded-xl" value={formData.telepon} onChange={handleInputChange} autoComplete="off" required />
             </div>
           </div>
 
@@ -292,34 +302,40 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
               <Label htmlFor="nisn" className="flex items-center gap-2 font-semibold">
                 <i className="fas fa-id-card text-primary"></i> NISN
               </Label>
-              <Input id="nisn" placeholder="10 digit angka" className="h-12 border-2 rounded-xl" value={formData.nisn} onChange={handleInputChange} autoComplete="off" required />
+              <Input id="nisn" placeholder="10 Digit" className="h-12 border-2 rounded-xl" value={formData.nisn} onChange={handleInputChange} autoComplete="off" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="nik" className="flex items-center gap-2 font-semibold">
-                <i className="fas fa-id-card text-primary"></i> NIK
+                <i className="fas fa-id-card text-primary"></i> NIK Santri/KK
               </Label>
-              <Input id="nik" placeholder="16 digit angka" className="h-12 border-2 rounded-xl" value={formData.nik} onChange={handleInputChange} autoComplete="off" required />
+              <Input id="nik" placeholder="16 Digit" className="h-12 border-2 rounded-xl" value={formData.nik} onChange={handleInputChange} autoComplete="off" required />
             </div>
           </div>
 
           <div className="space-y-5 bg-muted/30 p-6 rounded-2xl border border-dashed border-primary/20">
             <div className="space-y-2">
-              <Label htmlFor="foto" className="font-semibold">Foto (.jpg/.png, Max 1MB)</Label>
-              <Input id="foto" type="file" accept=".jpg,.jpeg,.png" onChange={handleFileChange} className="bg-white border-2 rounded-xl" required />
+              <Label htmlFor="foto" className="font-semibold text-sm">Pas Foto Terbaru (.jpg, Max 1MB)</Label>
+              <Input id="foto" type="file" accept=".jpg,.jpeg,.png" onChange={handleFileChange} className="bg-white border-2 rounded-xl cursor-pointer" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="ijazah" className="font-semibold">Ijazah (PDF, Max 1MB)</Label>
-              <Input id="ijazah" type="file" accept=".pdf" onChange={handleFileChange} className="bg-white border-2 rounded-xl" required />
+              <Label htmlFor="ijazah" className="font-semibold text-sm">Scan Ijazah Terakhir (.pdf, Max 1MB)</Label>
+              <Input id="ijazah" type="file" accept=".pdf" onChange={handleFileChange} className="bg-white border-2 rounded-xl cursor-pointer" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kk" className="font-semibold">KK (PDF, Max 1MB)</Label>
-              <Input id="kk" type="file" accept=".pdf" onChange={handleFileChange} className="bg-white border-2 rounded-xl" required />
+              <Label htmlFor="kk" className="font-semibold text-sm">Scan Kartu Keluarga (.pdf, Max 1MB)</Label>
+              <Input id="kk" type="file" accept=".pdf" onChange={handleFileChange} className="bg-white border-2 rounded-xl cursor-pointer" required />
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="submit" className="w-full h-14 text-lg font-bold rounded-xl hero-gradient" disabled={loading}>
-              {loading ? 'Sedang Memproses...' : 'Kirim & Bayar Sekarang'}
+          <DialogFooter className="pt-4">
+            <Button type="submit" className="w-full h-14 text-lg font-bold rounded-xl hero-gradient shadow-lg" disabled={loading}>
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-2"></i> Memproses Data...
+                </>
+              ) : (
+                'Kirim & Lanjut Pembayaran'
+              )}
             </Button>
           </DialogFooter>
         </form>
