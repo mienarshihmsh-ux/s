@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -97,9 +96,8 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
   const generatePDF = (data: typeof formData, orderId: string) => {
     const doc = new jsPDF();
     
-    // Header
     doc.setFontSize(22);
-    doc.setTextColor(30, 132, 73); // Warna hijau primary
+    doc.setTextColor(30, 132, 73);
     doc.text('TPA AL IMAN', 105, 20, { align: 'center' });
     
     doc.setFontSize(14);
@@ -109,7 +107,6 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     doc.setLineWidth(0.5);
     doc.line(20, 35, 190, 35);
     
-    // Content
     doc.setFontSize(12);
     let y = 50;
     const lineHeight = 10;
@@ -133,7 +130,6 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     doc.setTextColor(30, 132, 73);
     doc.text('LUNAS (Rp 50.000)', 30, y); y += lineHeight + 20;
     
-    // Footer
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(10);
     doc.text('Terima kasih telah melakukan pendaftaran digital di TPA AL IMAN.', 105, y, { align: 'center' }); y += 5;
@@ -258,7 +254,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl z-[1200]">
+      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl z-[1050]">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-2xl font-headline font-bold text-primary flex items-center gap-3">
             <i className="fas fa-paper-plane"></i> Form Pendaftaran Santri Baru

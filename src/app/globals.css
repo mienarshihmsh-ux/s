@@ -42,10 +42,11 @@
 }
 
 /* 
- * Memastikan SweetAlert2 selalu berada di depan modal ShadCN/Radix 
+ * Memastikan SweetAlert2 dan Midtrans Snap selalu berada di depan dan dapat diklik 
+ * Meskipun modal Radix UI/Shadcn sedang aktif.
  */
-.swal2-container {
-  z-index: 10000 !important;
+.swal2-container, #snap-midtrans {
+  z-index: 999999 !important;
   pointer-events: auto !important;
 }
 
