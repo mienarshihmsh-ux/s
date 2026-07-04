@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -14,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createPaymentToken } from '@/app/actions/payment';
 import Swal from 'sweetalert2';
+import jsPDF from 'jspdf';
 
 declare global {
   interface Window {
@@ -92,6 +94,54 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     });
   };
 
+  const generatePDF = (data: typeof formData, orderId: string) => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(30, 132, 73); // Warna hijau primary
+    doc.text('TPA AL IMAN', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('BUKTI PENDAFTARAN SANTRI BARU', 105, 30, { align: 'center' });
+    
+    doc.setLineWidth(0.5);
+    doc.line(20, 35, 190, 35);
+    
+    // Content
+    doc.setFontSize(12);
+    let y = 50;
+    const lineHeight = 10;
+    
+    doc.text(`No. Registrasi: ${orderId}`, 20, y); y += lineHeight;
+    doc.text(`Tanggal: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 20, y); y += lineHeight + 5;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Data Calon Santri:', 20, y); y += lineHeight;
+    doc.setFont('helvetica', 'normal');
+    
+    doc.text(`Nama Lengkap: ${data.nama}`, 30, y); y += lineHeight;
+    doc.text(`NISN: ${data.nisn}`, 30, y); y += lineHeight;
+    doc.text(`NIK: ${data.nik}`, 30, y); y += lineHeight;
+    doc.text(`Email: ${data.email}`, 30, y); y += lineHeight;
+    doc.text(`No. WhatsApp: ${data.telepon}`, 30, y); y += lineHeight + 5;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Status Pembayaran:', 20, y); y += lineHeight;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 132, 73);
+    doc.text('LUNAS (Rp 50.000)', 30, y); y += lineHeight + 20;
+    
+    // Footer
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(10);
+    doc.text('Terima kasih telah melakukan pendaftaran digital di TPA AL IMAN.', 105, y, { align: 'center' }); y += 5;
+    doc.text('Silakan simpan bukti ini untuk keperluan administrasi selanjutnya.', 105, y, { align: 'center' });
+    
+    doc.save(`Bukti_Pendaftaran_${data.nama.replace(/\s+/g, '_')}.pdf`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -108,16 +158,14 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
     setLoading(true);
 
     try {
-      // 1. Konversi berkas ke Base64
       const fotoBase64 = await fileToBase64(files.foto);
       const ijazahBase64 = await fileToBase64(files.ijazah);
       const kkBase64 = await fileToBase64(files.kk);
 
-      // 2. Kirim data ke Google Apps Script
       const bodyParams = new URLSearchParams();
       bodyParams.append('nama', formData.nama);
       bodyParams.append('email', formData.email);
-      bodyParams.append('noTelp', formData.telepon); // Sesuai Apps Script
+      bodyParams.append('noTelp', formData.telepon);
       bodyParams.append('nisn', formData.nisn);
       bodyParams.append('nik', formData.nik);
       bodyParams.append('foto', fotoBase64);
@@ -133,7 +181,6 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
       const result = await response.json();
 
-      // Tangani error dari Apps Script (Misal: NISN ganda)
       if (result.result !== 'success') {
         setLoading(false);
         Swal.fire({
@@ -145,7 +192,6 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
         return;
       }
 
-      // 3. Proses Pembayaran Midtrans
       const orderId = `REG-${Date.now()}-${formData.nisn}`;
       const amount = 50000; 
 
@@ -161,14 +207,23 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
       if (window.snap && paymentResult?.token) {
         window.snap.pay(paymentResult.token, {
           onSuccess: () => {
+            const finalData = { ...formData };
             Swal.fire({
               title: 'Berhasil!',
               text: 'Pendaftaran dan pembayaran telah selesai.',
               icon: 'success',
+              showCancelButton: true,
               confirmButtonColor: '#1e8449',
+              cancelButtonColor: '#6c757d',
+              confirmButtonText: '<i class="fas fa-download"></i> Unduh Bukti PDF',
+              cancelButtonText: 'Tutup',
+            }).then((result) => {
+              if (result.isConfirmed) {
+                generatePDF(finalData, orderId);
+              }
+              onClose();
+              setFormData({ nama: '', email: '', telepon: '', nisn: '', nik: '' });
             });
-            onClose();
-            setFormData({ nama: '', email: '', telepon: '', nisn: '', nik: '' });
           },
           onPending: () => {
             Swal.fire({
