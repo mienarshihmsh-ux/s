@@ -42,12 +42,11 @@
 }
 
 /* 
- * Memastikan SweetAlert2 dan Midtrans Snap selalu berada di depan dan dapat diklik 
- * Meskipun modal Radix UI/Shadcn sedang aktif.
+ * Menghapus pointer-events: auto !important yang menyebabkan form tidak bisa diklik.
+ * Sekarang hanya memastikan z-index tinggi agar tampil di depan saat aktif.
  */
 .swal2-container, #snap-midtrans {
   z-index: 999999 !important;
-  pointer-events: auto !important;
 }
 
 .hero-gradient {

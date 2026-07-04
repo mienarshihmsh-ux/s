@@ -254,7 +254,7 @@ export function RegistrationModal({ isOpen, onClose, appsScriptUrl }: Registrati
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl z-[1050]">
+      <DialogContent className="sm:max-w-[650px] max-h-[95vh] overflow-y-auto rounded-3xl p-8 border-none shadow-2xl">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-2xl font-headline font-bold text-primary flex items-center gap-3">
             <i className="fas fa-paper-plane"></i> Form Pendaftaran Santri Baru
