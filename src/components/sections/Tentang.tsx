@@ -15,7 +15,8 @@ export function Tentang({ data, imageUrl }: TentangProps) {
   return (
     <section id="tentang" className="section section-light py-24 px-[5%] bg-white">
       <div className="max-w-6xl mx-auto">
-        <h2 className="section-title flex items-center justify-center gap-3 text-center">
+        {/* Judul yang dipastikan berada di tengah */}
+        <h2 className="section-title flex items-center justify-center gap-3 text-center w-full">
           <Info className="w-8 h-8 text-primary" /> Tentang Kami
         </h2>
 
@@ -34,14 +35,14 @@ export function Tentang({ data, imageUrl }: TentangProps) {
 
           {/* Kolom Media & Statistik (Kanan) */}
           <div className="lg:col-span-5 flex flex-col gap-6">
-            {/* Gambar Utama */}
+            {/* Gambar Utama dengan object-contain agar tidak terpotong */}
             {imageUrl && (
-              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border-4 border-white transition-transform duration-500 hover:scale-[1.01] bg-muted/20">
+              <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border-4 border-white transition-transform duration-500 hover:scale-[1.01] bg-muted/5">
                 <Image 
                   src={imageUrl} 
                   alt="Tentang TPA AL IMAN" 
                   fill 
-                  className="object-contain"
+                  className="object-contain object-center"
                   data-ai-hint="islamic activity"
                   priority
                 />
@@ -78,6 +79,7 @@ const StatCard = ({ icon, label, value }: { icon: string; label: string; value: 
     <div className="mb-2 text-[#f9e79f]">
       <i className={`${icon} text-2xl md:text-3xl`}></i>
     </div>
+    {/* Menggunakan hanya satu tanda plus (+) */}
     <div className="text-xl md:text-2xl font-bold mb-0.5">{value}+</div>
     <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-90 leading-tight">
       {label}
