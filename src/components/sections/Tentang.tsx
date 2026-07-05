@@ -17,7 +17,7 @@ export function Tentang({ data, imageUrl }: TentangProps) {
       <div className="max-w-6xl mx-auto">
         {/* Judul dengan Ikon dan Teks yang sejajar di tengah */}
         <div className="flex justify-center mb-12">
-          <h2 className="section-title flex items-center gap-3">
+          <h2 className="section-title flex items-center justify-center gap-3">
             <Info className="w-9 h-9 text-primary" />
             <span>Tentang Kami</span>
           </h2>
@@ -78,12 +78,12 @@ export function Tentang({ data, imageUrl }: TentangProps) {
 }
 
 const StatCard = ({ icon, label, value }: { icon: string; label: string; value: string | number }) => (
-  <div className="bg-primary p-4 md:p-5 rounded-xl text-center text-white transition-all duration-300 shadow-lg hover:-translate-y-1.5 flex flex-col items-center justify-center flex-1 min-h-[120px]">
+  <div className="bg-primary p-4 md:p-5 rounded-2xl text-center text-white transition-all duration-300 shadow-lg hover:-translate-y-1.5 flex flex-col items-center justify-center flex-1 min-h-[120px]">
     <div className="mb-2 text-[#f9e79f]">
       <i className={`${icon} text-2xl md:text-3xl`}></i>
     </div>
-    {/* Menggunakan hanya satu tanda plus (+) */}
-    <div className="text-xl md:text-2xl font-bold mb-0.5">{value}+</div>
+    {/* Menggunakan nilai dari data secara langsung karena sudah menyertakan tanda plus (+) dari Google Sheet */}
+    <div className="text-xl md:text-2xl font-bold mb-0.5">{value}</div>
     <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-90 leading-tight">
       {label}
     </div>
