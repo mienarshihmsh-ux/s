@@ -15,13 +15,13 @@ export function Tentang({ data, imageUrl }: TentangProps) {
   return (
     <section id="tentang" className="section section-light py-24 px-[5%] bg-white">
       <div className="max-w-6xl mx-auto">
-        {/* Judul dengan Ikon dan Teks yang sejajar di tengah */}
-        <div className="flex justify-center mb-12">
-          <h2 className="section-title flex items-center justify-center gap-3">
-            <Info className="w-9 h-9 text-primary" />
+        {/* Judul dengan Ikon dan Teks yang sejajar di tengah dengan garis kuning di bawahnya */}
+        <h2 className="section-title">
+          <span className="flex items-center justify-center gap-3">
+            <Info className="w-8 h-8 md:w-9 md:h-9 text-primary" />
             <span>Tentang Kami</span>
-          </h2>
-        </div>
+          </span>
+        </h2>
 
         <div className="grid lg:grid-cols-12 gap-12 items-start mt-16">
           {/* Kolom Deskripsi (Kiri) */}
@@ -82,7 +82,6 @@ const StatCard = ({ icon, label, value }: { icon: string; label: string; value: 
     <div className="mb-2 text-[#f9e79f]">
       <i className={`${icon} text-2xl md:text-3xl`}></i>
     </div>
-    {/* Menggunakan nilai dari data secara langsung karena sudah menyertakan tanda plus (+) dari Google Sheet */}
     <div className="text-xl md:text-2xl font-bold mb-0.5">{value}</div>
     <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest opacity-90 leading-tight">
       {label}
