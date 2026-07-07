@@ -2,6 +2,9 @@
 
 Aplikasi web modern untuk manajemen pendaftaran santri baru di TPA AL IMAN. Dibangun dengan fokus pada kemudahan pengguna, keamanan data, dan integrasi pembayaran digital.
 
+## 📝 Deskripsi Aplikasi
+TPA AL IMAN Digital adalah platform pendaftaran santri baru yang dirancang untuk mendigitalkan proses administrasi sekolah Al-Qur'an. Aplikasi ini memungkinkan calon wali santri untuk melakukan pendaftaran secara mandiri, mengunggah dokumen persyaratan, dan melakukan pembayaran biaya pendaftaran secara instan. Data yang masuk akan dikelola secara otomatis melalui integrasi cloud untuk memastikan efisiensi dan transparansi.
+
 ## 🚀 Fitur Utama
 
 - **Landing Page Interaktif:** Tampilan responsif dengan desain bernuansa Islami yang modern.
@@ -47,27 +50,11 @@ Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer lokal And
 
 Berikut adalah struktur folder utama dalam proyek ini:
 
-```text
-AL-IMAN/
-├── .idx/                   # Konfigurasi lingkungan pengembangan Cloud (Google IDX)
-├── src/                    # Folder utama kode sumber
-│   ├── ai/                 # Logika kecerdasan buatan (Genkit)
-│   ├── app/                # Logika utama aplikasi (Next.js App Router)
-│   │   ├── actions/        # Server Actions (misal: pemrosesan pembayaran)
-│   │   ├── lib/            # Konfigurasi internal & placeholder data
-│   │   ├── globals.css     # Styling global (Tailwind & Tema Shadcn)
-│   │   ├── layout.tsx      # Tata letak induk
-│   │   └── page.tsx        # Halaman beranda utama
-│   ├── components/         # Komponen UI reusable
-│   │   ├── layout/         # Navbar, Footer, Loading
-│   │   ├── sections/       # Hero, Tentang, Gallery, Kontak, Modal
-│   │   └── ui/             # Komponen dasar Shadcn UI
-│   ├── hooks/              # Custom React hooks
-│   └── lib/                # Utilitas (utils.ts) dan tipe data (types.ts)
-├── .env                    # Variabel lingkungan (Rahasia)
-├── package.json            # Daftar dependensi & skrip
-└── tailwind.config.ts      # Konfigurasi styling Tailwind
-```
+- `src/app`: Logika utama aplikasi (Next.js App Router) dan Server Actions.
+- `src/components`: Komponen UI reusable seperti Navbar, Hero, dan Modal Pendaftaran.
+- `src/lib`: Utilitas, konfigurasi internal, dan tipe data TypeScript.
+- `src/ai`: Integrasi kecerdasan buatan menggunakan Genkit.
+- `public`: Aset statis seperti ikon dan manifest.
 
 ## 🛠️ Teknologi yang Digunakan
 
